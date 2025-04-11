@@ -18,6 +18,8 @@ type HandlerI interface {
 	deleteLastProductHandler(w http.ResponseWriter, r *http.Request)
 	closeLastReceptionHandler(w http.ResponseWriter, r *http.Request)
 	getListPVZ(w http.ResponseWriter, r *http.Request)
+	registerUserHandler(w http.ResponseWriter, r *http.Request)
+	loginUserHandler(w http.ResponseWriter, r *http.Request)
 }
 
 type Handler struct {
@@ -35,13 +37,26 @@ func NewHandler(ctx context.Context, svc service.ServiceI) HandlerI {
 func (h Handler) NewRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Post("/dummyLogin", h.dummyLoginHandler)
+	r.Group(func(r chi.Router) {
+		r.Post("/dummyLogin", h.dummyLoginHandler)
+		r.Post("/register", h.registerUserHandler)
+		r.Post("/login", h.loginUserHandler)
+	})
 
-	r.With(middleware.RoleMiddleware(auth.ValidateToken, "moderator")).Post("/pvz", h.createPVZHandler)
-	r.With(middleware.RoleMiddleware(auth.ValidateToken, "pvz_employee")).Post("/receptions", h.createReceptionHandler)
-	r.With(middleware.RoleMiddleware(auth.ValidateToken, "pvz_employee")).Post("/products", h.addProductToReceptionHandler)
-	r.With(middleware.RoleMiddleware(auth.ValidateToken, "pvz_employee")).Post("/pvz/{pvzId}/delete_last_product", h.deleteLastProductHandler)
-	r.With(middleware.RoleMiddleware(auth.ValidateToken, "pvz_employee")).Post("/pvz/{pvzId}/close_last_reception", h.closeLastReceptionHandler)
-	r.With(middleware.RoleMiddleware(auth.ValidateToken, "pvz_employee", "moderator")).Get("/pvz", h.getListPVZ)
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.AuthMiddleware(auth.ValidateToken))
+
+		r.With(middleware.RequireRole("moderator")).Post("/pvz", h.createPVZHandler)
+
+		r.With(middleware.RequireRole("employee")).Group(func(r chi.Router) {
+			r.Post("/receptions", h.createReceptionHandler)
+			r.Post("/products", h.addProductToReceptionHandler)
+			r.Post("/pvz/{pvzId}/delete_last_product", h.deleteLastProductHandler)
+			r.Post("/pvz/{pvzId}/close_last_reception", h.closeLastReceptionHandler)
+		})
+
+		r.With(middleware.RequireRole("employee", "moderator")).Get("/pvz", h.getListPVZ)
+	})
+
 	return r
 }

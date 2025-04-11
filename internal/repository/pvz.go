@@ -10,7 +10,7 @@ import (
 
 func (r Repository) CreatePVZ(ctx context.Context, city string) (models.PVZ, error) {
 	var pvz models.PVZ
-	err := r.conn.QueryRow(ctx, QueryCreatePVZ, city).Scan(&pvz.ID, &pvz.RegistrationDate, &pvz.City)
+	err := r.conn.QueryRow(ctx, queryCreatePVZ, city).Scan(&pvz.ID, &pvz.RegistrationDate, &pvz.City)
 	if err != nil {
 		slog.Error("Ошибка при заведении ПВЗ", "error", err)
 		return models.PVZ{}, fmt.Errorf("r.conn.QueryRow: %w", err)

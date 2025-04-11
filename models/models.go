@@ -5,12 +5,6 @@ import (
 	"time"
 )
 
-type User struct {
-	ID    uuid.UUID `json:"id"`
-	Email string    `json:"email"`
-	Role  string    `json:"role"`
-}
-
 type PVZ struct {
 	ID               uuid.UUID `json:"id"`
 	RegistrationDate time.Time `json:"registrationDate"`
@@ -30,15 +24,6 @@ type Product struct {
 	Type        string    `json:"type"`
 	ReceptionID uuid.UUID `json:"receptionId"`
 }
-
-type DummyLoginRequest struct {
-	Role string `json:"role"`
-}
-
-type DummyLoginResponse struct {
-	Token string `json:"token"`
-}
-
 type Error struct {
 	Message string `json:"message"`
 }

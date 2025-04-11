@@ -10,11 +10,13 @@ import (
 type RepositoryI interface {
 	CreatePVZ(ctx context.Context, city string) (models.PVZ, error)
 	CreateReception(ctx context.Context, pvzID uuid.UUID) (models.Reception, error)
-	GetActiveReceptionByPVZ(ctx context.Context, pvzID uuid.UUID) (uuid.UUID, error)
-	AddProduct(ctx context.Context, productType string, receptionID uuid.UUID) (models.Product, error)
+	AddProductToActiveReception(ctx context.Context, productType string, pvzID uuid.UUID) (models.Product, error)
 	DeleteLastProductInReception(ctx context.Context, pvzID uuid.UUID) error
 	CloseLastReception(ctx context.Context, pvzID uuid.UUID) (models.Reception, error)
 	GetPVZList(ctx context.Context, params models.PVZFilterParams) ([]models.PVZWithReceptions, error)
+	CheckEmailExists(ctx context.Context, email string) (bool, error)
+	CreateUser(ctx context.Context, user models.UserRegisterReq) (uuid.UUID, error)
+	GetRoleByEmail(ctx context.Context, email string) (string, string, error)
 }
 
 type Repository struct {

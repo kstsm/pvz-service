@@ -29,6 +29,7 @@ func Run() {
 	repo := repository.NewRepository(conn)
 	svc := service.NewService(repo)
 	router := handler.NewHandler(ctx, svc)
+
 	srv := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port),
 		Handler: router.NewRouter(),

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func RoleMiddleware(validateToken func(string) (string, error), allowedRoles ...string) func(http.Handler) http.Handler {
+func AuthMiddleware(validateToken func(string) (string, error)) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := ExtractToken(r)
@@ -23,20 +23,30 @@ func RoleMiddleware(validateToken func(string) (string, error), allowedRoles ...
 				return
 			}
 
-			allowed := false
-			for _, ar := range allowedRoles {
-				if role == ar {
-					allowed = true
-					break
-				}
-			}
-			if !allowed {
-				sendJSONError(w, http.StatusForbidden, "Недостаточно прав доступа")
+			ctx := context.WithValue(r.Context(), "role", role)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			roleVal := r.Context().Value("role")
+			role, ok := roleVal.(string)
+			if !ok || role == "" {
+				sendJSONError(w, http.StatusForbidden, "Роль не найдена в контексте")
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), "role", role)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			for _, allowed := range allowedRoles {
+				if role == allowed {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			sendJSONError(w, http.StatusForbidden, "Недостаточно прав доступа")
 		})
 	}
 }
