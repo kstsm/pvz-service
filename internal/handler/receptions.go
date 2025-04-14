@@ -52,6 +52,12 @@ func (h Handler) addProductToReceptionHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	if !isValidProduct(req.Type) {
+		slog.Error("Недопустимый продукт", "role", req.Type)
+		writeErrorResponse(w, http.StatusBadRequest, "Недопустимый продукт")
+		return
+	}
+
 	product, err := h.service.AddProductToActiveReception(r.Context(), req.Type, req.PVZID)
 	if err != nil {
 		switch {
@@ -97,13 +103,6 @@ func (h Handler) deleteLastProductHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (h Handler) closeLastReceptionHandler(w http.ResponseWriter, r *http.Request) {
-	role := r.Context().Value("role").(string)
-	if role != "employee" {
-		slog.Warn("Попытка закрытия приёмки не сотрудником ПВЗ", "role", role)
-		writeErrorResponse(w, http.StatusForbidden, "Доступ запрещен: только сотрудники ПВЗ могут закрывать приёмки")
-		return
-	}
-
 	pvzIDParam := chi.URLParam(r, "pvzId")
 	pvzID, err := uuid.Parse(pvzIDParam)
 	if err != nil {
@@ -126,5 +125,5 @@ func (h Handler) closeLastReceptionHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	sendJSONResponse(w, http.StatusCreated, reception)
+	sendJSONResponse(w, http.StatusOK, reception)
 }

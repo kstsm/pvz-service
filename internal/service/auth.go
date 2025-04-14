@@ -11,16 +11,6 @@ import (
 )
 
 func (s Service) RegisterUser(ctx context.Context, req models.UserRegisterReq) (models.UserRegisterResp, error) {
-	exists, err := s.repo.CheckEmailExists(ctx, req.Email)
-	if err != nil {
-		slog.Error("Ошибка при проверке email", "email", req.Email, "error", err)
-		return models.UserRegisterResp{}, fmt.Errorf("не удалось проверить email: %w", err)
-	}
-	if exists {
-		slog.Error("Пользователь с таким email уже существует", "email", req.Email)
-		return models.UserRegisterResp{}, apperrors.ErrEmailAlreadyExists
-	}
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		slog.Error("Ошибка хеширования пароля", "email", req.Email, "error", err)
@@ -49,7 +39,7 @@ func (s Service) LoginUser(ctx context.Context, req models.UserLoginReq) (string
 		return "", err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password)); err != nil {
 		slog.Warn("Неверный пароль", "email", req.Email)
 		return "", apperrors.ErrInvalidCredentials
 	}

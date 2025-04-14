@@ -56,17 +56,22 @@ const (
 		RETURNING id, date_time, type, reception_id
 	`
 
+	checkActiveReceptionQuery = `
+		SELECT EXISTS (
+			SELECT 1
+			FROM receptions r
+			WHERE r.pvz_id = $1 AND r.status != 'close'
+			LIMIT 1
+		)
+	`
+
 	getLastProductQuery = `
-	SELECT p.id
-	FROM products p
-	WHERE p.reception_id = (
-		SELECT r.id
-		FROM receptions r
-		WHERE r.pvz_id = $1 AND r.status != 'close'
-		LIMIT 1
-	) 
-	ORDER BY p.date_time DESC
-	LIMIT 1
-	FOR UPDATE SKIP LOCKED;
-`
+		SELECT p.id
+    	FROM products p
+    	JOIN receptions r ON p.reception_id = r.id
+    	WHERE r.pvz_id = $1 AND r.status != 'close'
+    	ORDER BY p.date_time DESC
+    	LIMIT 1
+    	FOR UPDATE SKIP LOCKED
+	`
 )

@@ -7,24 +7,6 @@ import (
 	"net/http"
 )
 
-func (h Handler) getListPVZ(w http.ResponseWriter, r *http.Request) {
-	params, err := parsePVZFilterParams(r)
-	if err != nil {
-		slog.Warn("Невалидные параметры запроса для фильтрации ПВЗ", "error", err)
-		writeErrorResponse(w, http.StatusBadRequest, "Невалидные параметры запроса")
-		return
-	}
-
-	pvzList, err := h.service.GetPVZList(r.Context(), params)
-	if err != nil {
-		slog.Error("Ошибка при получении списка ПВЗ", "error", err)
-		writeErrorResponse(w, http.StatusInternalServerError, "Не удалось получить список ПВЗ")
-		return
-	}
-
-	sendJSONResponse(w, http.StatusOK, pvzList)
-}
-
 func (h Handler) createPVZHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.PVZ
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -33,9 +15,9 @@ func (h Handler) createPVZHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.City != "Москва" && req.City != "Санкт-Петербург" && req.City != "Казань" {
+	if !isValidCity(req.City) {
 		slog.Warn("Попытка создать ПВЗ в недопустимом городе", "city", req.City)
-		writeErrorResponse(w, http.StatusBadRequest, "Можно создать ПВЗ только в городах: Москва, Санкт-Петербург, Казань")
+		writeErrorResponse(w, http.StatusBadRequest, "Данный город пока недоступен")
 		return
 	}
 
@@ -47,4 +29,21 @@ func (h Handler) createPVZHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJSONResponse(w, http.StatusOK, pvz)
+}
+
+func (h Handler) getListPVZ(w http.ResponseWriter, r *http.Request) {
+	params, err := parsePVZFilterParams(r)
+	if err != nil {
+		slog.Warn("Невалидные параметры запроса для фильтрации ПВЗ", "error", err)
+		writeErrorResponse(w, http.StatusBadRequest, "Невалидные параметры запроса")
+		return
+	}
+	pvzList, err := h.service.GetPVZList(r.Context(), params)
+	if err != nil {
+		slog.Error("Ошибка при получении списка ПВЗ", "error", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Не удалось получить список ПВЗ")
+		return
+	}
+
+	sendJSONResponse(w, http.StatusOK, pvzList)
 }

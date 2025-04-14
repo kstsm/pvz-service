@@ -10,6 +10,33 @@ import (
 	"time"
 )
 
+func isValidProduct(product string) bool {
+	allowedProduct := map[string]bool{
+		"электроника": true,
+		"одежда":      true,
+		"обувь":       true,
+	}
+	return allowedProduct[product]
+}
+
+func isValidRole(role string) bool {
+	allowedRoles := map[string]bool{
+		"client":    true,
+		"moderator": true,
+		"employee":  true,
+	}
+	return allowedRoles[role]
+}
+
+func isValidCity(city string) bool {
+	allowedCity := map[string]bool{
+		"Москва":          true,
+		"Санкт-Петербург": true,
+		"Казань":          true,
+	}
+	return allowedCity[city]
+}
+
 func sendJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
@@ -31,41 +58,40 @@ func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
 }
 
 func parsePVZFilterParams(r *http.Request) (models.PVZFilterParams, error) {
-	query := r.URL.Query()
+	params := models.PVZFilterParams{
+		Page:  1,
+		Limit: 10,
+	}
 
-	var resp models.PVZFilterParams
-
-	startDateStr := r.URL.Query().Get("start_date")
-	if startDateStr != "" {
-		startDate, err := time.Parse("2006-01-02", startDateStr)
+	if startDate := r.URL.Query().Get("startDate"); startDate != "" {
+		parsedStartDate, err := time.Parse(time.RFC3339, startDate)
 		if err != nil {
-			return resp, fmt.Errorf("invalid start_date format")
+			return params, fmt.Errorf("неверный формат даты начала: %v", err)
 		}
-		resp.StartDate = &startDate
+		params.StartDate = &parsedStartDate
 	}
 
-	endDateStr := r.URL.Query().Get("end_date")
-	if endDateStr != "" {
-		endDate, err := time.Parse("2006-01-02", endDateStr)
+	if endDate := r.URL.Query().Get("endDate"); endDate != "" {
+		parsedEndDate, err := time.Parse(time.RFC3339, endDate)
 		if err != nil {
-			return resp, fmt.Errorf("invalid end_date format")
+			return params, fmt.Errorf("неверный формат даты конца: %v", err)
 		}
-		resp.EndDate = &endDate
+		params.EndDate = &parsedEndDate
 	}
 
-	var err error
-
-	pageStr := query.Get("page")
-	resp.Page, err = strconv.Atoi(pageStr)
-	if err != nil || resp.Page <= 0 {
-		resp.Page = 1
+	if page := r.URL.Query().Get("page"); page != "" {
+		parsedPage, err := strconv.Atoi(page)
+		if err == nil && parsedPage > 0 {
+			params.Page = parsedPage
+		}
 	}
 
-	limitStr := query.Get("limit")
-	resp.Limit, err = strconv.Atoi(limitStr)
-	if err != nil || resp.Limit <= 0 || resp.Limit > 30 {
-		resp.Limit = 10
+	if limit := r.URL.Query().Get("limit"); limit != "" {
+		parsedLimit, err := strconv.Atoi(limit)
+		if err == nil && parsedLimit > 0 && parsedLimit <= 30 {
+			params.Limit = parsedLimit
+		}
 	}
 
-	return resp, nil
+	return params, nil
 }

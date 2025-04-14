@@ -19,7 +19,7 @@ func (h Handler) dummyLoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Role != "client" && req.Role != "moderator" && req.Role != "employee" {
+	if !isValidRole(req.Role) {
 		slog.Error("Недопустимая роль", "role", req.Role)
 		writeErrorResponse(w, http.StatusBadRequest, "Недопустимая роль")
 		return
@@ -44,7 +44,7 @@ func (h Handler) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Role != "client" && req.Role != "moderator" && req.Role != "employee" {
+	if !isValidRole(req.Role) {
 		slog.Error("Недопустимая роль", "role", req.Role)
 		writeErrorResponse(w, http.StatusBadRequest, "Недопустимая роль")
 		return

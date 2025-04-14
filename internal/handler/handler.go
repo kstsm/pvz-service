@@ -34,6 +34,11 @@ func NewHandler(ctx context.Context, svc service.ServiceI) HandlerI {
 	}
 }
 
+func NewRouterForTests(ctx context.Context, svc service.ServiceI) http.Handler {
+	router := NewHandler(ctx, svc)
+	return router.NewRouter()
+}
+
 func (h Handler) NewRouter() http.Handler {
 	r := chi.NewRouter()
 

@@ -71,12 +71,25 @@ func (r Repository) DeleteLastProductInReception(ctx context.Context, pvzID uuid
 
 	var productID uuid.UUID
 
+	var receptionExists bool
+	err = tx.QueryRow(ctx, checkActiveReceptionQuery, pvzID).Scan(&receptionExists)
+	if err != nil {
+		slog.Error("Ошибка при проверке активной приемки", "pvzId", pvzID, "error", err)
+		return fmt.Errorf("ошибка при проверке активной приемки: %w", err)
+	}
+
+	if !receptionExists {
+		slog.Warn("Нет активной приемки", "pvzId", pvzID)
+		return apperrors.ErrNoActiveReception
+	}
+
 	err = tx.QueryRow(ctx, getLastProductQuery, pvzID).Scan(&productID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			slog.Warn("Нет активной приёмки или товаров для удаления", "pvzId", pvzID)
+			slog.Warn("Нет товаров для удаления", "pvzId", pvzID)
 			return apperrors.ErrNoProductToDelete
 		}
+
 		slog.Error("Ошибка при получении последнего товара", "pvzId", pvzID, "error", err)
 		return fmt.Errorf("ошибка при получении последнего товара: %w", err)
 	}
@@ -87,7 +100,7 @@ func (r Repository) DeleteLastProductInReception(ctx context.Context, pvzID uuid
 		return fmt.Errorf("ошибка при удалении товара: %w", err)
 	}
 
-	if err := tx.Commit(ctx); err != nil {
+	if err = tx.Commit(ctx); err != nil {
 		slog.Error("Ошибка при фиксации транзакции", "pvzId", pvzID, "error", err)
 		return fmt.Errorf("ошибка при фиксации транзакции: %w", err)
 	}

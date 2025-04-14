@@ -22,10 +22,10 @@ func (r Repository) CreatePVZ(ctx context.Context, city string) (models.PVZ, err
 func (r Repository) GetPVZList(ctx context.Context, params models.PVZFilterParams) ([]models.PVZWithReceptions, error) {
 	var query string
 	var args []interface{}
-	query = `SELECT pvz.id, pvz.registration_date, pvz.city, receptions.id, receptions.date_time, receptions.status 
-	          FROM pvz 
-	          LEFT JOIN receptions ON pvz.id = receptions.pvz_id 
-	          WHERE 1=1`
+	query = `SELECT pvz.id, pvz.registration_date, pvz.city, receptions.id, receptions.date_time, receptions.status
+	FROM pvz
+	LEFT JOIN receptions ON pvz.id = receptions.pvz_id
+	WHERE 1=1`
 
 	if params.StartDate != nil {
 		query += " AND receptions.date_time >= $1"
@@ -55,6 +55,7 @@ func (r Repository) GetPVZList(ctx context.Context, params models.PVZFilterParam
 			return nil, err
 		}
 
+		reception.PVZID = pvz.ID
 		if _, exists := pvzMap[pvz.ID]; !exists {
 			pvzMap[pvz.ID] = &models.PVZWithReceptions{
 				PVZ:        pvz,

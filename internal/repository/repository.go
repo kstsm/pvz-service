@@ -14,7 +14,6 @@ type RepositoryI interface {
 	DeleteLastProductInReception(ctx context.Context, pvzID uuid.UUID) error
 	CloseLastReception(ctx context.Context, pvzID uuid.UUID) (models.Reception, error)
 	GetPVZList(ctx context.Context, params models.PVZFilterParams) ([]models.PVZWithReceptions, error)
-	CheckEmailExists(ctx context.Context, email string) (bool, error)
 	CreateUser(ctx context.Context, user models.UserRegisterReq) (uuid.UUID, error)
 	GetRoleByEmail(ctx context.Context, email string) (string, string, error)
 }
